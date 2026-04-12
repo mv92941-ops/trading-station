@@ -1,0 +1,22 @@
+# 敏感設定（不上傳）
+config.json
+backend/token.json
+
+# Python 快取
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# QAPI 日誌（本機產生）
+backend/Logs/
+
+# 虛擬環境
+venv/
+.venv/
+env/
+
+# 系統檔案
+.DS_Store
+Thumbs.db

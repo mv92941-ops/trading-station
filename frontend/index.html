@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>交易工作站</title>
+  <link rel="stylesheet" href="style.css?v=5" />
+</head>
+<body>
+
+<!-- ── 頂部欄 ─────────────────────────────────────────────────── -->
+<header id="topbar">
+  <div id="ws-status" title="WebSocket 連線狀態"></div>
+  <h1>交易工作站</h1>
+  <div id="price-bar">
+    <div class="price-item" data-symbol="TAIEX">
+      <span class="label">加權指數</span>
+      <span class="value">--</span>
+      <span class="change">--</span>
+    </div>
+    <div class="price-item" data-symbol="2330">
+      <span class="label">台積電</span>
+      <span class="value">--</span>
+      <span class="change">--</span>
+    </div>
+  </div>
+  <div id="yt-connect-area"></div>
+</header>
+
+<!-- ── 新聞跑馬燈 ──────────────────────────────────────────────── -->
+<div id="news-bar">
+  <div class="label">財經新聞</div>
+  <div id="news-ticker"><div id="news-inner">載入中...</div></div>
+</div>
+
+<!-- ── 主版面 ─────────────────────────────────────────────────── -->
+<main id="main">
+
+  <!-- 恐貪指數 -->
+  <div id="fng-panel">
+    <div id="fng-header"><span>市場情緒</span></div>
+    <div id="fng-body">
+      <div id="fng-gauge">
+        <svg viewBox="0 0 200 110" width="200">
+          <defs>
+            <linearGradient id="fng-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#e74c3c"/>
+              <stop offset="25%"  stop-color="#e67e22"/>
+              <stop offset="50%"  stop-color="#f1c40f"/>
+              <stop offset="75%"  stop-color="#2ecc71"/>
+              <stop offset="100%" stop-color="#27ae60"/>
+            </linearGradient>
+          </defs>
+          <path d="M10,100 A90,90 0 0,1 190,100" fill="none" stroke="url(#fng-grad)" stroke-width="18" stroke-linecap="round"/>
+          <line id="fng-needle" x1="100" y1="100" x2="100" y2="20" stroke="#fff" stroke-width="3" stroke-linecap="round"
+                style="transform-origin:100px 100px; transform:rotate(0deg); transition:transform 1s ease"/>
+          <circle cx="100" cy="100" r="6" fill="#fff"/>
+        </svg>
+      </div>
+      <div id="fng-value">--</div>
+      <div id="fng-label">載入中...</div>
+      <div id="fng-yesterday">昨日：-- ｜ 上週：-- ｜ 上月：--</div>
+    </div>
+  </div>
+
+  <!-- YouTube 播放器 -->
+  <div id="player-panel">
+    <div id="player-header"><span>交易音樂</span></div>
+    <div id="auth-prompt">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+        <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/>
+      </svg>
+      <p>請點擊右上角「YouTube 授權」</p>
+    </div>
+    <div id="yt-iframe-wrap">
+      <iframe id="yt-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    <div id="playlist-container"></div>
+    <div id="player-controls">
+      <button onclick="playPrev()" title="上一首">⏮</button>
+      <button onclick="playPause()" id="btn-playpause" title="播放/暫停">⏸</button>
+      <button onclick="playNext()" title="下一首">⏭</button>
+      <span id="now-playing">--</span>
+    </div>
+  </div>
+
+  <!-- 超簡單策略機 -->
+  <div id="strategy-panel" class="tool-panel">
+    <div class="panel-header">⚡ 超簡單策略機</div>
+    <div class="panel-body">
+
+      <!-- 大盤燈號 -->
+      <section class="s-section">
+        <div class="s-section-title">大盤燈號</div>
+        <div class="light-row">
+          <button class="light-btn" data-light="red">
+            <span class="light-circle red"></span>
+            <span class="light-label" style="color:var(--red)">紅燈</span>
+            <span class="light-desc">日K &gt; 20MA</span>
+          </button>
+          <button class="light-btn" data-light="yellow">
+            <span class="light-circle yellow"></span>
+            <span class="light-label" style="color:var(--yellow)">黃燈</span>
+            <span class="light-desc">20MA &gt; 日K &gt; 100MA</span>
+          </button>
+          <button class="light-btn" data-light="green">
+            <span class="light-circle green"></span>
+            <span class="light-label" style="color:var(--green)">綠燈</span>
+            <span class="light-desc">日K &lt; 100MA</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 關鍵點位 + 操作策略 + 停損區（同排） -->
+      <section class="s-section">
+        <div class="strat-sl-row">
+
+          <!-- 左：關鍵點位 -->
+          <div class="key-col">
+            <div class="s-section-title">關鍵點位</div>
+            <div class="key-grid">
+              <div class="key-row">
+                <label class="key-label"><span style="color:var(--red)">買進</span><span style="color:var(--muted)">/</span><span style="color:var(--green)">賣出</span></label>
+                <input type="number" id="inp-entry" class="key-input" placeholder="0">
+              </div>
+              <div class="key-row">
+                <label class="key-label" style="color:#fff">大牛</label>
+                <input type="number" id="inp-bull-big" class="key-input" placeholder="0">
+                <label class="key-label" style="color:#fff">大熊</label>
+                <input type="number" id="inp-bear-big" class="key-input" placeholder="0">
+              </div>
+              <div class="key-row">
+                <label class="key-label" style="color:var(--red)">牛角</label>
+                <input type="number" id="inp-bull-horn" class="key-input" placeholder="0">
+                <label class="key-label" style="color:var(--green)">熊掌</label>
+                <input type="number" id="inp-bear-claw" class="key-input" placeholder="0">
+              </div>
+              <div class="key-row">
+                <label class="key-label" style="color:#9b59b6">紫線</label>
+                <input type="number" id="inp-purple" class="key-input" placeholder="0">
+              </div>
+              <div class="key-row">
+                <label class="key-label">商品</label>
+                <input type="text" id="inp-product" class="key-input" placeholder="微型台指" style="max-width:80px">
+                <label class="key-label">每點</label>
+                <input type="number" id="inp-point-val" class="key-input" placeholder="10" style="max-width:60px">
+                <span class="key-unit">元</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 中：操作策略 -->
+          <div class="strat-col">
+            <div class="s-section-title">操作策略</div>
+            <div class="strategy-list">
+              <div class="strategy-item red-strategy" id="strat-red">牛紅紅<span class="strat-sub-text">(停損小守紫 停損大守熊掌)</span></div>
+              <div class="strategy-item yellow-strategy" id="strat-yellow">
+                <span>區間盤整</span>
+                <div class="sub-strategies" id="sub-strat">
+                  <button class="sub-btn" data-sub="bull" id="sub-bull">低階熊(守大熊)</button>
+                  <button class="sub-btn" data-sub="bear" id="sub-bear">高空牛(守大牛)</button>
+                </div>
+              </div>
+              <div class="strategy-item green-strategy" id="strat-green">熊綠綠<span class="strat-sub-text">(停損小守紫 停損大守牛角)</span></div>
+              <div class="strategy-item purple-strategy" id="strat-purple">紫爆<span class="strat-sub-text">(只做多 態度紅守大熊 態度綠破紫出)</span></div>
+            </div>
+          </div>
+
+          <!-- 右：停損區 -->
+          <div class="sl-col">
+            <div class="s-section-title">停損區</div>
+
+            <!-- 做多停損（紅燈） -->
+            <div class="sl-group sl-hidden" id="sl-long">
+              <div class="sl-title" style="color:var(--red)">做多</div>
+              <div class="sl-row">
+                <span class="sl-label" style="color:#9b59b6">紫線</span>
+                <span class="sl-calc" id="sl-long-purple">--</span>
+              </div>
+              <div class="sl-row">
+                <span class="sl-label" style="color:var(--green)">熊掌</span>
+                <span class="sl-calc" id="sl-long-claw">--</span>
+              </div>
+            </div>
+
+            <!-- 區間停損（黃燈） -->
+            <div class="sl-group sl-hidden" id="sl-range">
+              <div class="sl-title" style="color:var(--yellow)">區間</div>
+              <div class="sl-row" id="sl-range-bear-row">
+                <span class="sl-label" style="color:#fff">大熊</span>
+                <span class="sl-calc" id="sl-range-bear">--</span>
+              </div>
+              <div class="sl-row" id="sl-range-bull-row">
+                <span class="sl-label" style="color:#fff">大牛</span>
+                <span class="sl-calc" id="sl-range-bull">--</span>
+              </div>
+            </div>
+
+            <!-- 做空停損（綠燈） -->
+            <div class="sl-group sl-hidden" id="sl-short">
+              <div class="sl-title" style="color:var(--green)">做空</div>
+              <div class="sl-row">
+                <span class="sl-label" style="color:#9b59b6">紫線</span>
+                <span class="sl-calc" id="sl-short-purple">--</span>
+              </div>
+              <div class="sl-row">
+                <span class="sl-label" style="color:var(--red)">牛角</span>
+                <span class="sl-calc" id="sl-short-horn">--</span>
+              </div>
+            </div>
+
+            <!-- 紫爆停損（恆亮） -->
+            <div class="sl-group" id="sl-zibao">
+              <div class="sl-title" style="color:#9b59b6">紫爆</div>
+              <div class="sl-row" id="sl-zibao-row-red">
+                <button class="zibao-btn zibao-red-default" data-zibao="red" id="zibao-red">態度紅</button>
+                <span class="sl-calc" id="sl-zibao-bear">--</span>
+              </div>
+              <div class="sl-row" id="sl-zibao-row-green">
+                <button class="zibao-btn zibao-green-default" data-zibao="green" id="zibao-green">態度綠</button>
+                <span class="sl-calc" id="sl-zibao-purple">--</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- 目前獲利/虧損 -->
+      <section class="s-section" id="pnl-section">
+        <div class="s-section-title">目前獲利 / 虧損</div>
+        <div class="pnl-row">
+          <label class="key-label">目前價格</label>
+          <input type="number" id="inp-current-price" class="key-input" placeholder="0" style="max-width:100px">
+          <div class="pnl-result" id="pnl-result">
+            <span id="pnl-pts">--</span>
+            <span id="pnl-money" class="pnl-money">--</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- 加權槓桿計算機 -->
+  <div id="leverage-panel" class="tool-panel">
+    <div class="panel-header">📊 加權槓桿計算機</div>
+    <div class="panel-body">
+
+      <section class="l-section">
+        <div class="l-section-title">台灣加權指數</div>
+        <input type="number" id="lev-taiex" class="lev-input-lg" placeholder="21000">
+      </section>
+
+      <section class="l-section">
+        <div class="l-section-title">保證金 (元/口)</div>
+        <div class="lev-row">
+          <label class="lev-label">台指期</label>
+          <input type="number" id="lev-margin-tx" class="lev-input" placeholder="184000">
+        </div>
+        <div class="lev-row">
+          <label class="lev-label">小型台指</label>
+          <input type="number" id="lev-margin-mtx" class="lev-input" placeholder="46000">
+        </div>
+        <div class="lev-row">
+          <label class="lev-label">微型台指</label>
+          <input type="number" id="lev-margin-mxf" class="lev-input" placeholder="13500">
+        </div>
+      </section>
+
+      <section class="l-section">
+        <div class="l-section-title">單口槓桿倍數</div>
+        <div class="lev-row">
+          <label class="lev-label">台指期</label>
+          <span class="lev-auto" id="lev-ratio-tx">--</span>
+          <span class="lev-unit">倍</span>
+          <span class="lev-formula">(指數×200÷保證金)</span>
+        </div>
+        <div class="lev-row">
+          <label class="lev-label">小型台指</label>
+          <span class="lev-auto" id="lev-ratio-mtx">--</span>
+          <span class="lev-unit">倍</span>
+          <span class="lev-formula">(指數×50÷保證金)</span>
+        </div>
+        <div class="lev-row">
+          <label class="lev-label">微型台指</label>
+          <span class="lev-auto" id="lev-ratio-mxf">--</span>
+          <span class="lev-unit">倍</span>
+          <span class="lev-formula">(指數×10÷保證金)</span>
+        </div>
+      </section>
+
+      <section class="l-section">
+        <div class="l-section-title">降槓桿計算</div>
+        <div class="lev-input-row">
+          <div class="lev-row">
+            <label class="lev-label">目標槓桿</label>
+            <input type="number" id="lev-target" class="lev-input" placeholder="3">
+            <span class="lev-unit">倍</span>
+          </div>
+        </div>
+
+        <table class="lev-table">
+          <thead>
+            <tr>
+              <th>商品</th>
+              <th>必須口 / 做一口</th>
+              <th>所需保證金</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>台指期</td>
+              <td class="lev-auto"><span id="lev-lots-tx">--</span><span class="lev-one-lot" id="lev-one-tx"></span></td>
+              <td id="lev-capital-tx" class="lev-auto">--</td>
+            </tr>
+            <tr>
+              <td>小型台指</td>
+              <td class="lev-auto"><span id="lev-lots-mtx">--</span><span class="lev-one-lot" id="lev-one-mtx"></span></td>
+              <td id="lev-capital-mtx" class="lev-auto">--</td>
+            </tr>
+            <tr>
+              <td>微型台指</td>
+              <td class="lev-auto"><span id="lev-lots-mxf">--</span><span class="lev-one-lot" id="lev-one-mxf"></span></td>
+              <td id="lev-capital-mxf" class="lev-auto">--</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+
+</main>
+
+<script src="app.js?v=9"></script>
+</body>
+</html>
