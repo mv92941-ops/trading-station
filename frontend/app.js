@@ -3,8 +3,11 @@
    ═══════════════════════════════════════════════════════════════ */
 console.log('=== APP JS v7 LOADED ===');
 
-const API = 'http://localhost:8000';
-const WS  = 'ws://localhost:8000/ws';
+// 本機用 localhost，雲端自動使用當前網域
+const API = window.location.origin.includes('localhost')
+  ? 'http://localhost:8000'
+  : window.location.origin;
+const WS  = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 
 // ── WebSocket ──────────────────────────────────────────────────
 const priceData = {};
