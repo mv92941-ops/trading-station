@@ -107,8 +107,13 @@ class YouTubeAuth:
         return Flow.from_client_config(client_config, scopes=SCOPES, redirect_uri=REDIRECT_URI)
 
     def _load_token(self) -> Credentials | None:
+        # 優先讀檔案，其次從環境變數（雲端部署用）
         if TOKEN_FILE.exists():
             return Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
+        env_token = os.environ.get("YOUTUBE_TOKEN_JSON")
+        if env_token:
+            import json as _json
+            return Credentials.from_authorized_user_info(_json.loads(env_token), SCOPES)
         return None
 
     def _save_token(self):
