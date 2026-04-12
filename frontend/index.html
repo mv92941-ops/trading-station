@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>交易工作站</title>
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -228,16 +228,83 @@
         </div>
       </section>
 
-      <!-- 目前獲利/虧損 -->
-      <section class="s-section" id="pnl-section">
-        <div class="s-section-title">目前獲利 / 虧損</div>
-        <div class="pnl-row">
-          <label class="key-label">目前價格</label>
-          <input type="number" id="inp-current-price" class="key-input" placeholder="0" style="max-width:100px">
-          <div class="pnl-result" id="pnl-result">
-            <span id="pnl-pts">--</span>
-            <span id="pnl-money" class="pnl-money">--</span>
+      <!-- 交易規劃 + 目前獲利/虧損 -->
+      <section class="s-section" id="bottom-section">
+        <div class="bottom-row">
+
+          <!-- 左：交易規劃 -->
+          <div class="plan-block">
+            <div class="s-section-title">交易規劃</div>
+
+            <!-- 紫線 -->
+            <div class="plan-row">
+              <span class="plan-name" style="color:#9b59b6">紫線</span>
+              <div class="plan-field-group">
+                <div class="plan-field">
+                  <span class="plan-sub">停利</span>
+                  <input type="number" id="plan-purple-tp" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-purple" data-target="plan-purple-tp" data-name="紫" style="border-color:rgba(155,89,182,.4);color:#9b59b6">紫</button>
+                </div>
+                <div class="plan-field">
+                  <span class="plan-sub">停損</span>
+                  <input type="number" id="plan-purple-sl" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-purple" data-target="plan-purple-sl" data-name="紫" style="border-color:rgba(155,89,182,.4);color:#9b59b6">紫</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 牛熊 -->
+            <div class="plan-row">
+              <span class="plan-name">牛熊</span>
+              <div class="plan-field-group">
+                <div class="plan-field">
+                  <span class="plan-sub">停利</span>
+                  <input type="number" id="plan-bullbear-tp" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-bull-horn" data-target="plan-bullbear-tp" data-name="牛" style="border-color:rgba(232,72,85,.4);color:var(--red)">牛</button>
+                  <button class="chip-btn" data-src="inp-bear-claw" data-target="plan-bullbear-tp" data-name="熊" style="border-color:rgba(38,194,129,.4);color:var(--green)">熊</button>
+                </div>
+                <div class="plan-field">
+                  <span class="plan-sub">停損</span>
+                  <input type="number" id="plan-bullbear-sl" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-bull-horn" data-target="plan-bullbear-sl" data-name="牛" style="border-color:rgba(232,72,85,.4);color:var(--red)">牛</button>
+                  <button class="chip-btn" data-src="inp-bear-claw" data-target="plan-bullbear-sl" data-name="熊" style="border-color:rgba(38,194,129,.4);color:var(--green)">熊</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 大牛熊 -->
+            <div class="plan-row">
+              <span class="plan-name">大牛熊</span>
+              <div class="plan-field-group">
+                <div class="plan-field">
+                  <span class="plan-sub">停利</span>
+                  <input type="number" id="plan-big-tp" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-bull-big" data-target="plan-big-tp" data-name="大牛" style="border-color:rgba(232,72,85,.4);color:var(--red)">大牛</button>
+                  <button class="chip-btn" data-src="inp-bear-big" data-target="plan-big-tp" data-name="大熊" style="border-color:rgba(38,194,129,.4);color:var(--green)">大熊</button>
+                </div>
+                <div class="plan-field">
+                  <span class="plan-sub">停損</span>
+                  <input type="number" id="plan-big-sl" class="plan-input" placeholder="--">
+                  <button class="chip-btn" data-src="inp-bull-big" data-target="plan-big-sl" data-name="大牛" style="border-color:rgba(232,72,85,.4);color:var(--red)">大牛</button>
+                  <button class="chip-btn" data-src="inp-bear-big" data-target="plan-big-sl" data-name="大熊" style="border-color:rgba(38,194,129,.4);color:var(--green)">大熊</button>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- 右：目前獲利/虧損 -->
+          <div id="pnl-section" class="pnl-block">
+            <div class="s-section-title">目前獲利 / 虧損</div>
+            <div class="pnl-row">
+              <label class="key-label">目前價格</label>
+              <input type="number" id="inp-current-price" class="key-input" placeholder="0" style="max-width:100px">
+              <div class="pnl-result" id="pnl-result">
+                <span id="pnl-pts">--</span>
+                <span id="pnl-money" class="pnl-money">--</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -335,6 +402,6 @@
 
 </main>
 
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>

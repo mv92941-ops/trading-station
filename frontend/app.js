@@ -171,7 +171,10 @@ let selectedZibao = null;   // 'green' | 'red' | null  (紫爆選項)
 const STRATEGY_INPUTS = [
   'inp-entry','inp-bull-big','inp-bear-big',
   'inp-bull-horn','inp-bear-claw','inp-purple',
-  'inp-product','inp-point-val'
+  'inp-product','inp-point-val',
+  'plan-purple-tp','plan-purple-sl',
+  'plan-bullbear-tp','plan-bullbear-sl',
+  'plan-big-tp','plan-big-sl'
 ];
 const LEVERAGE_INPUTS = [
   'lev-taiex','lev-margin-tx','lev-margin-mtx','lev-margin-mxf','lev-target'
@@ -264,13 +267,30 @@ function initStrategy() {
 
   // 輸入框即時重算 + 儲存
   document.querySelectorAll('#strategy-panel input').forEach(inp => {
-    inp.addEventListener('input', () => { updateStrategy(); saveState(); });
+    inp.addEventListener('input', () => { updateStrategy(); saveState(); updateChipLabels(); });
   });
 
   // 目前價格輸入
   document.getElementById('inp-current-price')?.addEventListener('input', calcPnl);
 
+  // 關鍵點位 chip 點擊 → 填入交易規劃欄位
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const srcVal = document.getElementById(btn.dataset.src)?.value;
+      if (!srcVal) return;
+      const targetEl = document.getElementById(btn.dataset.target);
+      if (targetEl) {
+        targetEl.value = srcVal;
+        saveState();
+        // 短暫閃爍確認
+        targetEl.style.borderColor = 'var(--accent)';
+        setTimeout(() => { targetEl.style.borderColor = ''; }, 600);
+      }
+    });
+  });
+
   updateStrategy();
+  updateChipLabels();
 }
 
 function updateStrategy() {
@@ -350,6 +370,14 @@ function calcPnl() {
   pnlPts.className     = cls;
   pnlMoney.className   = `pnl-money ${cls}`;
   pnlMoney.textContent = ptVal ? `(${sign}${(pts * ptVal).toLocaleString()} 元)` : '';
+}
+
+function updateChipLabels() {
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    const val = document.getElementById(btn.dataset.src)?.value;
+    const name = btn.dataset.name;
+    btn.textContent = val ? `${name} ${val}` : name;
+  });
 }
 
 function calcStopLoss() {
