@@ -18,11 +18,13 @@ from googleapiclient.discovery import build
 TOKEN_FILE = Path(__file__).parent / "token.json"
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
-# 本機用 localhost；雲端部署時設 YOUTUBE_REDIRECT_URI 環境變數
-REDIRECT_URI = os.environ.get(
-    "YOUTUBE_REDIRECT_URI",
-    "http://localhost:8000/youtube/callback"
+# Render 自動注入 RENDER_EXTERNAL_URL；本機用 localhost
+_base = (
+    os.environ.get("RENDER_EXTERNAL_URL")          # Render 雲端
+    or os.environ.get("YOUTUBE_REDIRECT_URI", "").replace("/youtube/callback", "")  # 手動覆蓋
+    or "http://localhost:8000"                       # 本機預設
 )
+REDIRECT_URI = _base.rstrip("/") + "/youtube/callback"
 
 
 class YouTubeAuth:
