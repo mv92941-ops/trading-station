@@ -151,7 +151,7 @@ async def prices_endpoint():
         except Exception as e:
             print(f"[Prices] TAIEX 抓取失敗: {e}")
 
-        # ── 台積電 (2330) — TWSE 官方 API ──────────────────────────
+        # ── 台積電 (2330) — TWSE API，失敗則 yfinance ─────────────
         try:
             r = await client.get(
                 "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
@@ -160,15 +160,29 @@ async def prices_endpoint():
             )
             data = r.json()
             item = data.get("msgArray", [{}])[0]
-            # z = 成交價，y = 昨收（盤後或休市時 z 可能為 "-"）
             val = item.get("z", "-")
             if val in ("-", "", None):
                 val = item.get("y", "-")
             if val not in ("-", "", None):
                 result["2330"] = float(val)
-                print(f"[Prices] 2330 = {result['2330']}")
+                print(f"[Prices] 2330(TWSE) = {result['2330']}")
+            else:
+                raise ValueError("TWSE 無資料")
         except Exception as e:
-            print(f"[Prices] 2330 抓取失敗: {e}")
+            print(f"[Prices] 2330 TWSE 失敗({e})，改用 yfinance")
+            try:
+                ticker = yf.Ticker("2330.TW")
+                if intraday:
+                    df = ticker.history(period="1d", interval="1m")
+                    if df.empty:
+                        df = ticker.history(period="5d", interval="1d")
+                else:
+                    df = ticker.history(period="5d", interval="1d")
+                if not df.empty:
+                    result["2330"] = round(float(df["Close"].dropna().iloc[-1]), 2)
+                    print(f"[Prices] 2330(yfinance) = {result['2330']}")
+            except Exception as e2:
+                print(f"[Prices] 2330 yfinance 也失敗: {e2}")
 
         # ── 微型台指 (WMXF) — TAIFEX OpenAPI，Contract = TMF ──────
         try:
