@@ -126,7 +126,6 @@ async def prices_endpoint():
     import yfinance as yf
     import httpx
     from datetime import datetime, timezone, timedelta
-    symbols = {"TAIEX": "^TWII", "2330": "2330.TW"}
     result = {}
     tw_now = datetime.now(timezone(timedelta(hours=8)))
     market_open  = tw_now.replace(hour=9,  minute=0,  second=0, microsecond=0)
@@ -134,9 +133,11 @@ async def prices_endpoint():
     is_weekday   = tw_now.weekday() < 5
     intraday     = is_weekday and market_open <= tw_now <= market_close
 
-    for key, yahoo_sym in symbols.items():
+    async with httpx.AsyncClient(timeout=10) as client:
+
+        # ── 加權指數 (TAIEX) — yfinance ────────────────────────────
         try:
-            ticker = yf.Ticker(yahoo_sym)
+            ticker = yf.Ticker("^TWII")
             if intraday:
                 df = ticker.history(period="1d", interval="1m")
                 if df.empty:
@@ -145,43 +146,57 @@ async def prices_endpoint():
                 df = ticker.history(period="5d", interval="1d")
             if not df.empty:
                 price = round(float(df["Close"].dropna().iloc[-1]), 2)
-                result[key] = price
-                print(f"[Prices] {key} = {price}  (intraday={intraday})")
+                result["TAIEX"] = price
+                print(f"[Prices] TAIEX = {price}")
         except Exception as e:
-            print(f"[Prices] {key} 抓取失敗: {e}")
+            print(f"[Prices] TAIEX 抓取失敗: {e}")
 
-    # ── 微型台指 (WMXF) — TAIFEX OpenAPI DailyMarketReportFut ──
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        # ── 台積電 (2330) — TWSE 官方 API ──────────────────────────
+        try:
+            r = await client.get(
+                "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+                params={"ex_ch": "tse_2330.tw", "json": "1", "delay": "0"},
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            data = r.json()
+            item = data.get("msgArray", [{}])[0]
+            # z = 成交價，y = 昨收（盤後或休市時 z 可能為 "-"）
+            val = item.get("z", "-")
+            if val in ("-", "", None):
+                val = item.get("y", "-")
+            if val not in ("-", "", None):
+                result["2330"] = float(val)
+                print(f"[Prices] 2330 = {result['2330']}")
+        except Exception as e:
+            print(f"[Prices] 2330 抓取失敗: {e}")
+
+        # ── 微型台指 (WMXF) — TAIFEX OpenAPI，Contract = TMF ──────
+        try:
             r = await client.get(
                 "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
                 headers={"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
             )
             data = r.json()
-            # 篩選 MXF 一般交易時段，取成交量最大的近月合約
-            mxf = [d for d in data
-                   if d.get("Contract") == "MXF"
+            # TMF = 微型台指（每點10元），一般交易時段，取成交量最大近月
+            tmf = [d for d in data
+                   if d.get("Contract") == "TMF"
                    and d.get("TradingSession") == "一般"]
-            if not mxf:
-                # fallback：只篩 Contract
-                mxf = [d for d in data if d.get("Contract") == "MXF"]
-            if mxf:
+            if not tmf:
+                tmf = [d for d in data if d.get("Contract") == "TMF"]
+            if tmf:
                 def vol(d):
                     v = str(d.get("Volume") or "0").replace(",", "")
                     try: return int(v)
                     except: return 0
-                best = max(mxf, key=vol)
+                best = max(tmf, key=vol)
                 val = str(best.get("Last") or "").replace(",", "").strip()
                 if val and val not in ("-", ""):
-                    try:
-                        price = float(val)
-                        if price > 0:
-                            result["WMXF"] = price
-                            print(f"[Prices] WMXF = {price}  date={best.get('Date')}")
-                    except ValueError:
-                        pass
-    except Exception as e:
-        print(f"[Prices] WMXF 抓取失敗: {e}")
+                    price = float(val)
+                    if price > 0:
+                        result["WMXF"] = price
+                        print(f"[Prices] WMXF(TMF) = {price}  date={best.get('Date')}")
+        except Exception as e:
+            print(f"[Prices] WMXF 抓取失敗: {e}")
 
     return JSONResponse(result)
 
