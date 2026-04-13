@@ -124,6 +124,7 @@ async def youtube_playlist():
 @app.get("/prices")
 async def prices_endpoint():
     import yfinance as yf
+    import httpx
     from datetime import datetime, timezone, timedelta
     symbols = {"TAIEX": "^TWII", "2330": "2330.TW"}
     result = {}
@@ -148,6 +149,40 @@ async def prices_endpoint():
                 print(f"[Prices] {key} = {price}  (intraday={intraday})")
         except Exception as e:
             print(f"[Prices] {key} 抓取失敗: {e}")
+
+    # ── 微型台指 (WMXF) — TAIFEX OpenAPI DailyMarketReportFut ──
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(
+                "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
+                headers={"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
+            )
+            data = r.json()
+            # 篩選 MXF 一般交易時段，取成交量最大的近月合約
+            mxf = [d for d in data
+                   if d.get("Contract") == "MXF"
+                   and d.get("TradingSession") == "一般"]
+            if not mxf:
+                # fallback：只篩 Contract
+                mxf = [d for d in data if d.get("Contract") == "MXF"]
+            if mxf:
+                def vol(d):
+                    v = str(d.get("Volume") or "0").replace(",", "")
+                    try: return int(v)
+                    except: return 0
+                best = max(mxf, key=vol)
+                val = str(best.get("Last") or "").replace(",", "").strip()
+                if val and val not in ("-", ""):
+                    try:
+                        price = float(val)
+                        if price > 0:
+                            result["WMXF"] = price
+                            print(f"[Prices] WMXF = {price}  date={best.get('Date')}")
+                    except ValueError:
+                        pass
+    except Exception as e:
+        print(f"[Prices] WMXF 抓取失敗: {e}")
+
     return JSONResponse(result)
 
 
