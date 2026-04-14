@@ -151,38 +151,20 @@ async def prices_endpoint():
         except Exception as e:
             print(f"[Prices] TAIEX 抓取失敗: {e}")
 
-        # ── 台積電 (2330) — TWSE API，失敗則 yfinance ─────────────
+        # ── 台積電 (2330) — Yahoo Finance v8 API ──────────────────
         try:
             r = await client.get(
-                "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
-                params={"ex_ch": "tse_2330.tw", "json": "1", "delay": "0"},
-                headers={"User-Agent": "Mozilla/5.0"}
+                "https://query1.finance.yahoo.com/v8/finance/chart/2330.TW",
+                params={"interval": "1d", "range": "1d"},
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
             )
-            data = r.json()
-            item = data.get("msgArray", [{}])[0]
-            val = item.get("z", "-")
-            if val in ("-", "", None):
-                val = item.get("y", "-")
-            if val not in ("-", "", None):
-                result["2330"] = float(val)
-                print(f"[Prices] 2330(TWSE) = {result['2330']}")
-            else:
-                raise ValueError("TWSE 無資料")
+            meta = r.json()["chart"]["result"][0]["meta"]
+            price = meta.get("regularMarketPrice")
+            if price:
+                result["2330"] = float(price)
+                print(f"[Prices] 2330 = {result['2330']}")
         except Exception as e:
-            print(f"[Prices] 2330 TWSE 失敗({e})，改用 yfinance")
-            try:
-                ticker = yf.Ticker("2330.TW")
-                if intraday:
-                    df = ticker.history(period="1d", interval="1m")
-                    if df.empty:
-                        df = ticker.history(period="5d", interval="1d")
-                else:
-                    df = ticker.history(period="5d", interval="1d")
-                if not df.empty:
-                    result["2330"] = round(float(df["Close"].dropna().iloc[-1]), 2)
-                    print(f"[Prices] 2330(yfinance) = {result['2330']}")
-            except Exception as e2:
-                print(f"[Prices] 2330 yfinance 也失敗: {e2}")
+            print(f"[Prices] 2330 抓取失敗: {e}")
 
         # ── 微型台指 (WMXF) — TAIFEX OpenAPI，Contract = TMF ──────
         try:
