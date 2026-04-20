@@ -38,21 +38,23 @@ class YouTubeAuth:
         self.client_secret = config["youtube"]["client_secret"]
         self.playlist_id = config["youtube"]["playlist_id"]
         self._creds: Credentials | None = self._load_token()
+        self._pending_flow: Flow | None = None
 
     # ── OAuth 流程 ────────────────────────────────────────────────
 
     def get_auth_url(self) -> str:
-        flow = self._make_flow()
-        auth_url, _ = flow.authorization_url(
+        self._pending_flow = self._make_flow()
+        auth_url, _ = self._pending_flow.authorization_url(
             access_type="offline",
             include_granted_scopes="true",
         )
         return auth_url
 
     def exchange_code(self, code: str):
-        flow = self._make_flow()
+        flow = self._pending_flow or self._make_flow()
         flow.fetch_token(code=code)
         self._creds = flow.credentials
+        self._pending_flow = None
         self._save_token()
 
     def is_authorized(self) -> bool:
