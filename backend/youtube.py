@@ -58,10 +58,14 @@ class YouTubeAuth:
     def is_authorized(self) -> bool:
         if not self._creds:
             return False
-        if self._creds.expired and self._creds.refresh_token:
-            self._creds.refresh(Request())
-            self._save_token()
-        return self._creds and self._creds.valid
+        try:
+            if self._creds.expired and self._creds.refresh_token:
+                self._creds.refresh(Request())
+                self._save_token()
+            return bool(self._creds and self._creds.valid)
+        except Exception:
+            self._creds = None
+            return False
 
     # ── 播放清單 ──────────────────────────────────────────────────
 
