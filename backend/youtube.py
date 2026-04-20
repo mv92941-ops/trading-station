@@ -16,7 +16,10 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
 TOKEN_FILE = Path(__file__).parent / "token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.upload",
+]
 
 # Render 自動注入 RENDER_EXTERNAL_URL；本機用 localhost
 _base = (

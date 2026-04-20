@@ -174,7 +174,8 @@ const STRATEGY_INPUTS = [
   'inp-product','inp-point-val',
   'plan-purple-tp','plan-purple-sl',
   'plan-bullbear-tp','plan-bullbear-sl',
-  'plan-big-tp','plan-big-sl'
+  'plan-big-tp','plan-big-sl',
+  'inp-current-price'
 ];
 const LEVERAGE_INPUTS = [
   'lev-taiex','lev-margin-tx','lev-margin-mtx','lev-margin-mxf','lev-target'
@@ -271,7 +272,7 @@ function initStrategy() {
   });
 
   // 目前價格輸入
-  document.getElementById('inp-current-price')?.addEventListener('input', calcPnl);
+  document.getElementById('inp-current-price')?.addEventListener('input', () => { calcPnl(); saveState(); });
 
   // 關鍵點位 chip 點擊 → 填入交易規劃欄位
   document.querySelectorAll('.chip-btn').forEach(btn => {
